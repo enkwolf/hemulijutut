@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from courses.models import *
+from courses.views import is_course_staff
 
 # TODO: A view that displays statistics of a page that has embedded pages.
 #       E.g. the average completion status, how many of total course
@@ -551,14 +552,14 @@ def color_generator(total_colors):
         yield 'rgba({},{},{},0.65)'.format(int(r), int(g), int(b))
 
 def users_course(request, course_slug, instance_slug):
-    if not (request.user.is_authenticated() and request.user.is_active and\
-            request.user.is_staff):
-        return HttpResponseNotFound()
-
-    users = User.objects.all().order_by('username')
     course = Course.objects.get(slug=course_slug)
     instance = CourseInstance.objects.get(slug=instance_slug, course=course)
 
+    if not (request.user.is_authenticated() and request.user.is_active and\
+            is_course_staff(request.user, instance)):
+        return HttpResponseNotFound()
+
+    users = User.objects.all().order_by('username')
     exercises = course_exercises_with_color(course, instance)
     
     # Argh...
